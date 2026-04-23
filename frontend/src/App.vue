@@ -5,11 +5,18 @@ import { cart } from "./store/cart"
 <template>
   <div>
     <header class="bg-white shadow px-6 py-4 flex justify-between items-center">
-      <h1 class="text-xl font-bold text-indigo-600">
-        Recommender Shop
-      </h1>
+
+      <!-- LOGO (klik wraca do home) -->
+      <router-link
+          to="/home"
+          class="text-xl font-bold text-indigo-600 hover:text-indigo-700 transition"
+      >
+        Online Shop
+      </router-link>
 
       <div class="flex items-center gap-4">
+
+        <!-- KOSZYK -->
         <router-link to="/cart" class="relative">
           🛒
           <span
@@ -20,9 +27,14 @@ import { cart } from "./store/cart"
           </span>
         </router-link>
 
-        <button class="text-sm bg-gray-100 px-3 py-1 rounded hover:bg-gray-200">
+        <!-- WYLOGUJ -->
+        <button
+            class="text-sm bg-gray-100 px-3 py-1 rounded hover:bg-gray-200"
+            @click="() => { localStorage.clear(); location.href = '/login' }"
+        >
           Wyloguj
         </button>
+
       </div>
     </header>
 

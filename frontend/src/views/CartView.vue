@@ -6,6 +6,28 @@ import {
   increaseQuantity,
   decreaseQuantity
 } from "../store/cart"
+
+async function submitOrder() {
+  const userId = localStorage.getItem("userId")
+
+  const payload = {
+    userId,
+    items: cart.items.map(i => ({
+      productId: i.id,
+      quantity: i.quantity
+    }))
+  }
+
+  await fetch("http://localhost:8080/order", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(payload)
+  })
+
+  alert("Zamówienie zapisane!")
+}
 </script>
 
 <template>
@@ -24,23 +46,9 @@ import {
           <h2 class="font-semibold">{{ item.name }}</h2>
 
           <div class="flex items-center gap-3 mt-2">
-            <button
-                @click="decreaseQuantity(item.id)"
-                class="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
-            >
-              -
-            </button>
-
-            <span class="font-semibold">
-              {{ item.quantity }}
-            </span>
-
-            <button
-                @click="increaseQuantity(item.id)"
-                class="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
-            >
-              +
-            </button>
+            <button @click="decreaseQuantity(item.id)" class="px-2 py-1 bg-gray-200 rounded">-</button>
+            <span>{{ item.quantity }}</span>
+            <button @click="increaseQuantity(item.id)" class="px-2 py-1 bg-gray-200 rounded">+</button>
           </div>
         </div>
 
@@ -49,10 +57,7 @@ import {
             {{ item.id * item.quantity }} zł
           </p>
 
-          <button
-              @click="removeFromCart(item.id)"
-              class="text-sm text-red-500 mt-1"
-          >
+          <button @click="removeFromCart(item.id)" class="text-sm text-red-500">
             Usuń
           </button>
         </div>
@@ -64,6 +69,7 @@ import {
         </p>
 
         <button
+            @click="submitOrder"
             class="mt-4 bg-green-600 text-white px-6 py-2 rounded-xl hover:bg-green-700"
         >
           Zamów
