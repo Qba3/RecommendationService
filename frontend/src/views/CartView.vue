@@ -2,29 +2,47 @@
 import {
   cart,
   removeFromCart,
-  getTotal,
   increaseQuantity,
-  decreaseQuantity
+  decreaseQuantity,
+  getTotal,
+  clearCart
 } from "../store/cart"
 
 async function submitOrder() {
-  const userId = localStorage.getItem("userId")
+  const userId = Number(localStorage.getItem("userId"))
 
   const payload = {
-    userId,
-    items: cart.items.map(i => ({
-      productId: i.id,
-      quantity: i.quantity
+    user_id: userId,
+    items: cart.items.map(item => ({
+      product_id: item.id,
+      quantity: item.quantity
     }))
   }
 
-  await fetch("http://localhost:8080/order", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify(payload)
-  })
+  console.log(payload)
+
+  const response = await fetch(
+      "http://localhost:8080/order",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+      }
+  )
+
+  if (!response.ok) {
+    const error = await response.text()
+
+    console.error(error)
+
+    alert("Błąd zapisu zamówienia")
+
+    return
+  }
+
+  clearCart()
 
   alert("Zamówienie zapisane!")
 }
@@ -43,21 +61,40 @@ async function submitOrder() {
           class="bg-white p-4 rounded-xl shadow mb-4 flex justify-between items-center"
       >
         <div>
-          <h2 class="font-semibold">{{ item.name }}</h2>
+          <h2 class="font-semibold">
+            {{ item.name }}
+          </h2>
 
           <div class="flex items-center gap-3 mt-2">
-            <button @click="decreaseQuantity(item.id)" class="px-2 py-1 bg-gray-200 rounded">-</button>
-            <span>{{ item.quantity }}</span>
-            <button @click="increaseQuantity(item.id)" class="px-2 py-1 bg-gray-200 rounded">+</button>
+            <button
+                @click="decreaseQuantity(item.id)"
+                class="px-2 py-1 bg-gray-200 rounded"
+            >
+              -
+            </button>
+
+            <span>
+              {{ item.quantity }}
+            </span>
+
+            <button
+                @click="increaseQuantity(item.id)"
+                class="px-2 py-1 bg-gray-200 rounded"
+            >
+              +
+            </button>
           </div>
         </div>
 
         <div class="text-right">
           <p class="font-bold text-indigo-600">
-            {{ item.id * item.quantity }} zł
+            {{ item.price * item.quantity }} zł
           </p>
 
-          <button @click="removeFromCart(item.id)" class="text-sm text-red-500">
+          <button
+              @click="removeFromCart(item.id)"
+              class="text-sm text-red-500"
+          >
             Usuń
           </button>
         </div>
@@ -70,7 +107,7 @@ async function submitOrder() {
 
         <button
             @click="submitOrder"
-            class="mt-4 bg-green-600 text-white px-6 py-2 rounded-xl hover:bg-green-700"
+            class="mt-4 bg-green-600 text-white px-6 py-2 rounded-xl"
         >
           Zamów
         </button>

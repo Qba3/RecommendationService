@@ -5,7 +5,6 @@ import (
 	"RecommendationService/internal/handler"
 	"RecommendationService/internal/repository"
 	"RecommendationService/internal/service"
-	"encoding/json"
 	"log"
 	"net/http"
 
@@ -15,39 +14,51 @@ import (
 func main() {
 	database := db.NewDB()
 
+	orderRepo := repository.NewOrderRepository(database)
+	orderItemRepo := repository.NewOrderItemRepository(database)
+	productRepo := repository.NewProductRepository(database)
+	userRepo := repository.NewUserRepository(database)
+
+	userService := service.NewUserService(userRepo)
+	userHandler := handler.NewUserHandler(userService)
+
+	recommendationService := service.NewRecommendationService(
+		orderRepo,
+		productRepo,
+	)
+
+	orderService := service.NewOrderService(
+		orderRepo,
+		orderItemRepo,
+		productRepo,
+		recommendationService,
+	)
+
+	orderHandler := handler.NewOrderHandler(orderService)
+
+	productService := service.NewProductService(productRepo)
+	productHandler := handler.NewProductHandler(productService)
+
+	recommendationHandler := handler.NewRecommendationHandler(recommendationService)
+
+	http.HandleFunc(
+		"/recommendations/",
+		recommendationHandler.GetRecommendations,
+	)
+
+	http.HandleFunc("/login", userHandler.Login)
+
 	http.HandleFunc("/test", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("OK"))
 	})
 
-	orderRepo := repository.NewOrderRepository(db)
-	orderService := service.NewOrderService(orderRepo)
-	orderHandler := handler.NewOrderHandler(orderService)
-
 	http.HandleFunc("/order", orderHandler.CreateOrder)
-
-	http.HandleFunc("/products", func(w http.ResponseWriter, r *http.Request) {
-		enableCors(&w)
-
-		json.NewEncoder(w).Encode([]map[string]interface{}{
-			{"id": 1, "name": "Produkt 1"},
-			{"id": 2, "name": "Produkt 2"},
-			{"id": 3, "name": "Produkt 3"},
-		})
-	})
-	http.HandleFunc("/order", func(w http.ResponseWriter, r *http.Request) {
-		enableCors(&w)
-
-		json.NewEncoder(w).Encode([]map[string]interface{}{
-			{"id": 1, "name": "Produkt 1"},
-			{"id": 2, "name": "Produkt 2"},
-			{"id": 3, "name": "Produkt 3"},
-		})
-	})
+	http.HandleFunc("/products", productHandler.GetProducts)
 
 	log.Println("server started on :8080")
-	http.ListenAndServe(":8080", nil)
-}
 
-func enableCors(w *http.ResponseWriter) {
-	(*w).Header().Set("Access-Control-Allow-Origin", "*")
+	err := http.ListenAndServe(":8080", nil)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
